@@ -1,0 +1,15 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+    testCompile 'com.rethinkdb:rethinkdb-driver:+'
+    testCompile 'ch.qos.logback:logback-classic:+'
+}
