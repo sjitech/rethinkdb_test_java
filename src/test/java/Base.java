@@ -31,7 +31,7 @@ public class Base {
         static final long bookingTourCount = divUp(bookingCount, bookingsPerTour);
 
         static final long approvedBookingCount = bookingCount / bookingsPerTour * approvedBookingsPerTour
-                + (bookingCount % bookingsPerTour == 0 ? 0 : Math.max(bookingCount % bookingsPerTour, approvedBookingsPerTour));
+                + (bookingCount % bookingsPerTour == 0 ? 0 : Math.min(bookingCount % bookingsPerTour, approvedBookingsPerTour));
 
         static final long reviewCount = approvedBookingCount * 2;
 
@@ -92,9 +92,6 @@ public class Base {
 
         static final String approved = "approved";
         static final String canceled = "canceled";
-
-        static final String _passengerIdAry = "_passengerIdAry";
-        static final String _conducteurId = "_conducteurId";
 
         static final String _selfReviews = "_selfReviews";
         static final String _selfBookings = "_selfBookings";

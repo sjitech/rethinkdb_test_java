@@ -129,6 +129,8 @@ public class CheckData extends Base {
     @Test
     public void check_reviews() {
 
+        long selfReviewCount = db.getTableRowCount(S._selfReviews);
+
         String minReviewId = Format.reviewId(0);
         String maxReviewId = Format.reviewId(C.reviewCount - 1);
         logger.info("except review count: {}, min: {}, max: {}", C.reviewCount, minReviewId, maxReviewId);
@@ -208,11 +210,10 @@ public class CheckData extends Base {
                         .count()
                         .run(db.c));
 
-        assertEquals("every review should have unique [`tourId`,`byUserId`,`ofUserId`]", C.reviewCount,
+        assertEquals("every review should have unique [`tourId`,`byUserId`,`ofUserId`]", C.reviewCount - selfReviewCount / 2,
                 (long) r.table(S.reviews).distinct().optArg(S.index, S.tourIdAndbyUserIdAndofUserId)
                         .count()
-                        .run(db.c)
-                        + db.getTableRowCount(S._selfReviews) / 2);
+                        .run(db.c));
 
     }
 

@@ -94,27 +94,21 @@ public class Database {
 
     public interface RowProvider {
         /**
-         * return an Object or Object[] or List
-         * return null means skip, false means abort
+         * provide row data or row data array
          *
-         * @param iRow absolute index of result row in total rows returned.
-         *             Usually is same as callbackIndex.
-         *             If return array or null then it will be different with callbackIndex.
-         * @return single or array of row data object (javaBean/HashMap).
+         * @param iRow absolute row index. If return array or null, then iRow will be greater than iCallback
+         * @return single or array of row data object (javaBean/HashMap), or null which means skip
          */
         Object getDataOfRow(long iRow);
     }
 
     public interface RowProvider2 {
         /**
-         * return an Object or Object[] or List
-         * return null means skip, false means abort
+         * provide row data or row data array
          *
-         * @param iRow      absolute index of result row in total rows returned.
-         *                  Usually is same as callbackIndex.
-         *                  If return array or null then it will be different with callbackIndex.
-         * @param iCallback sequence of calling RowProvider
-         * @return single or array of row data object (javaBean/HashMap).
+         * @param iRow      absolute row index. If return array or null, then iRow will be greater than iCallback
+         * @param iCallback sequence of calling RowProvider2
+         * @return single or array of row data object (javaBean/HashMap), or null which means skip
          */
         Object getDataOfRow(long iRow, long iCallback);
     }
@@ -154,9 +148,8 @@ public class Database {
                 iRow++;
 
                 if (rowAry.size() == batchRows) {
-                    bulkInsert(tableName, rowAry);
+                    insertedCount += bulkInsert(tableName, rowAry);
 
-                    insertedCount += batchRows;
                     rowAry.clear();
                     logger.debug(" prepare rows");
                 }
@@ -164,8 +157,7 @@ public class Database {
         }
 
         if (rowAry.size() > 0) {
-            bulkInsert(tableName, rowAry);
-            insertedCount += rowAry.size();
+            insertedCount += bulkInsert(tableName, rowAry);
         }
         logger.debug("bulkInsert done: {} rows inserted to {}", insertedCount, tableName);
         return insertedCount;
