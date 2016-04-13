@@ -1,24 +1,16 @@
-import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.Database;
-
-import java.time.OffsetDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
-
-import static com.rethinkdb.RethinkDB.r;
 
 public class Base {
     static final Logger logger = LoggerFactory.getLogger(Base.class);
     Database db = new Database(System.getProperty("dbName", /*default db name:*/"test"));
 
     static class C {
-        static final int K = 1000;
-        static final int M = 10000;
+        static final int ROWS_UNIT = 100;
 
         static final long userCount = Long.valueOf(System.getProperty("userCount",
-                String.valueOf(100 * M)));
+                String.valueOf(100 * ROWS_UNIT)));
 
         static final long conducteurCount = (long) (userCount * Float.valueOf(System.getProperty("conducteurRatio",
                 String.valueOf(0.3))));
@@ -27,20 +19,19 @@ public class Base {
                 String.valueOf(0.8))));
 
         static final long tourCount = Long.valueOf(System.getProperty("tourCount",
-                String.valueOf(100 * M)));
+                String.valueOf(100 * ROWS_UNIT)));
 
         static final long bookingCount = Long.valueOf(System.getProperty("bookingCount",
-                String.valueOf(200 * M)));
+                String.valueOf(200 * ROWS_UNIT)));
 
-        static final int passengersPerTour = Integer.valueOf(System.getProperty("passengersPerTour",
+        static final int approvedBookingsPerTour = Integer.valueOf(System.getProperty("approvedBookingsPerTour",
                 String.valueOf(3)));
 
-        static final int bookingsPerTour = Math.max((int) divUp(bookingCount, tourCount), passengersPerTour + 1);
+        static final int bookingsPerTour = Math.max((int) divUp(bookingCount, tourCount), approvedBookingsPerTour + 1/*non-approved*/);
         static final long bookingTourCount = divUp(bookingCount, bookingsPerTour);
 
-        static final long approvedBookingTourCount = bookingTourCount -
-                (bookingCount % bookingsPerTour == 0 || bookingCount % bookingsPerTour >= passengersPerTour ? 0 : 1);
-        static final long approvedBookingCount = approvedBookingTourCount * passengersPerTour;
+        static final long approvedBookingCount = bookingCount / bookingsPerTour * approvedBookingsPerTour
+                + (bookingCount % bookingsPerTour == 0 ? 0 : Math.max(bookingCount % bookingsPerTour, approvedBookingsPerTour));
 
         static final long reviewCount = approvedBookingCount * 2;
 
@@ -50,10 +41,21 @@ public class Base {
     }
 
     static class Format {
-        static final String userId = "user%0" + String.valueOf(C.userCount).length() + "d";
-        static final String tourId = "tour%0" + String.valueOf(C.tourCount).length() + "d";
-        static final String bookingId = "booking%0" + String.valueOf(C.bookingCount).length() + "d";
-        static final String reviewId = "review%0" + String.valueOf(C.reviewCount).length() + "d";
+        static final String userId(long i) {
+            return String.format("user%0" + String.valueOf(C.userCount).length() + "d", i + 1);
+        }
+
+        static final String tourId(long i) {
+            return String.format("tour%0" + String.valueOf(C.tourCount).length() + "d", i + 1);
+        }
+
+        static final String bookingId(long i) {
+            return String.format("booking%0" + String.valueOf(C.bookingCount).length() + "d", i + 1);
+        }
+
+        static final String reviewId(long i) {
+            return String.format("review%0" + String.valueOf(C.reviewCount).length() + "d", i + 1);
+        }
     }
 
     static class S {

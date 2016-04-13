@@ -16,7 +16,7 @@ public class InsertData extends Base {
 
         db.bulkInsert(S.users, C.userCount, iUser -> {
 
-            String userId = String.format(Format.userId, iUser + 1);
+            String userId = Format.userId(iUser);
 
             HashMap<String, Object> rec = new HashMap<>();
             rec.put(S.userId, userId);
@@ -38,10 +38,10 @@ public class InsertData extends Base {
 
         db.bulkInsert(S.tours, C.tourCount, iTour -> {
 
-            String tourId = String.format(Format.tourId, iTour + 1);
+            String tourId = Format.tourId(iTour);
 
             long iConducteur = iTour % C.conducteurCount;
-            String conducteurId = String.format(Format.userId, iConducteur + 1);
+            String conducteurId = Format.userId(iConducteur);
 
             HashMap<String, Object> rec = new HashMap<>();
             rec.put(S.tourId, tourId);
@@ -67,18 +67,18 @@ public class InsertData extends Base {
 
         db.bulkInsert(S.bookings, C.bookingCount, iBooking -> {
 
-            String bookingId = String.format(Format.bookingId, iBooking + 1);
+            String bookingId = Format.bookingId(iBooking);
 
             long iTour = iBooking / C.bookingsPerTour;
-            String tourId = String.format(Format.tourId, iTour + 1);
+            String tourId = Format.tourId(iTour);
 
             long iConducteur = iTour % C.conducteurCount;
-            String conducteurId = String.format(Format.userId, iConducteur + 1);
+            String conducteurId = Format.userId(iConducteur);
 
             long iPassenger = iBooking % C.passengerCount;
-            String passengerId = String.format(Format.userId, C.userCount - iPassenger - 1 + 1);
+            String passengerId = Format.userId(C.userCount - iPassenger - 1);
 
-            String bookingStatus = iBooking % C.bookingsPerTour < C.passengersPerTour ? S.approved : S.canceled;
+            String bookingStatus = iBooking % C.bookingsPerTour < C.approvedBookingsPerTour ? S.approved : S.canceled;
 
             HashMap<String, Object> rec = new HashMap<>();
             rec.put(S.bookingId, bookingId);
@@ -96,7 +96,7 @@ public class InsertData extends Base {
     }
 
     HashMap<String, Object> newReview(long iReview, String tourId, String byUserId, String ofUserId, String bookingId) {
-        String reviewId = String.format(Format.reviewId, iReview + 1);
+        String reviewId = Format.reviewId(iReview);
 
         HashMap<String, Object> rec = new HashMap<>();
         rec.put(S.reviewId, reviewId);
@@ -127,20 +127,20 @@ public class InsertData extends Base {
 
         db.bulkInsert(S.reviews, C.bookingCount, (iReview, iBooking) -> {
 
-            boolean isApprovedBooking = iBooking % C.bookingsPerTour < C.passengersPerTour;
+            boolean isApprovedBooking = iBooking % C.bookingsPerTour < C.approvedBookingsPerTour;
             if (!isApprovedBooking)
                 return null; //skip
 
             long iTour = iBooking / C.bookingsPerTour;
-            String tourId = String.format(Format.tourId, iTour + 1);
+            String tourId = Format.tourId(iTour);
 
             long iConducteur = iTour % C.conducteurCount;
-            String conducteurId = String.format(Format.userId, iConducteur + 1);
+            String conducteurId = Format.userId(iConducteur);
 
             long iPassenger = iBooking % C.passengerCount;
-            String passengerId = String.format(Format.userId, C.userCount - iPassenger - 1 + 1);
+            String passengerId = Format.userId(C.userCount - iPassenger - 1);
 
-            String bookingId = String.format(Format.bookingId, iBooking + 1);
+            String bookingId = Format.bookingId(iBooking);
 
             return new Object[]{
                     newReview(iReview++, tourId, conducteurId, passengerId, bookingId)

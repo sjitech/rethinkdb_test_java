@@ -12,8 +12,8 @@ public class CheckData extends Base {
 
     @Test
     public void check_users() {
-        String minUserId = String.format(Format.userId, 1);
-        String maxUserId = String.format(Format.userId, C.userCount);
+        String minUserId = Format.userId(0);
+        String maxUserId = Format.userId(C.userCount - 1);
         logger.info("except user count: {}, min: {} - max: {}", C.userCount, minUserId, maxUserId);
 
         assertEquals(C.userCount, db.getTableRowCount(S.users));
@@ -27,8 +27,8 @@ public class CheckData extends Base {
     @Test
     public void check_tours() {
 
-        String minTourId = String.format(Format.tourId, 1);
-        String maxTourId = String.format(Format.tourId, C.tourCount);
+        String minTourId = Format.tourId(0);
+        String maxTourId = Format.tourId(C.tourCount - 1);
         logger.info("except tour count: {}, min: {}, max: {}", C.tourCount, minTourId, maxTourId);
 
         assertEquals(C.tourCount, db.getTableRowCount(S.tours));
@@ -37,9 +37,9 @@ public class CheckData extends Base {
 
         assertEquals(C.conducteurCount,
                 (long) r.table(S.tours).distinct().optArg(S.index, S.userId).count().run(db.c));
-        assertEquals(String.format(Format.userId, 1),
+        assertEquals(Format.userId(0),
                 r.table(S.tours).min().optArg(S.index, S.userId).g(S.userId).run(db.c));
-        assertEquals(String.format(Format.userId, C.conducteurCount),
+        assertEquals(Format.userId(C.conducteurCount - 1),
                 r.table(S.tours).max().optArg(S.index, S.userId).g(S.userId).run(db.c));
 
         //////////////////////////////////////////////////////////////////////
@@ -55,8 +55,8 @@ public class CheckData extends Base {
     public void check_bookings() {
         long count, exceptedCount;
 
-        String minBookingId = String.format(Format.bookingId, 1);
-        String maxBookingId = String.format(Format.bookingId, C.bookingCount);
+        String minBookingId = Format.bookingId(0);
+        String maxBookingId = Format.bookingId(C.bookingCount - 1);
         logger.info("except booking count: {}, min: {}, max: {}", C.bookingCount, minBookingId, maxBookingId);
 
         assertEquals(C.bookingCount, db.getTableRowCount(S.bookings));
@@ -65,9 +65,9 @@ public class CheckData extends Base {
 
         assertEquals(C.passengerCount,
                 (long) r.table(S.bookings).distinct().optArg(S.index, S.userId).count().run(db.c));
-        assertEquals(String.format(Format.userId, C.userCount - C.passengerCount + 1),
+        assertEquals(Format.userId(C.userCount - C.passengerCount),
                 r.table(S.bookings).min().optArg(S.index, S.userId).g(S.userId).run(db.c));
-        assertEquals(String.format(Format.userId, C.userCount),
+        assertEquals(Format.userId(C.userCount - 1),
                 r.table(S.bookings).max().optArg(S.index, S.userId).g(S.userId).run(db.c));
 
         assertEquals("should have specified numbers of unique `tourId`", C.bookingTourCount,
@@ -82,18 +82,21 @@ public class CheckData extends Base {
         count = r.table(S.bookings).group().optArg(S.index, S.tourId)
                 .count(row -> row.g(S.status).eq(S.approved))
                 .ungroup()
-                .count(row -> row.g(S.reduction).eq(C.passengersPerTour))
-                .run(db.c, OptArgs.of(S.array_limit, C.bookingTourCount));
-        exceptedCount = C.approvedBookingTourCount;
-        assertEquals("should almost every tour have some approved applicants",
+                .count(row -> row.g(S.reduction).eq(C.approvedBookingsPerTour))
+                .run(db.c, OptArgs.of(S.array_limit, C.bookingCount));
+        exceptedCount = C.bookingTourCount -
+                (C.bookingCount % C.bookingsPerTour == 0
+                        || C.bookingCount % C.bookingsPerTour >= C.approvedBookingsPerTour
+                        ? 0 : 1);
+        assertEquals("should almost every tour have " + C.approvedBookingsPerTour + " approved applicants",
                 exceptedCount, count);
 
         count = r.table(S.bookings).group().optArg(S.index, S.tourId)
                 .count(row -> row.g(S.status).ne(S.approved))
                 .ungroup()
-                .filter(row -> row.g(S.reduction).eq(C.bookingsPerTour - C.passengersPerTour))
+                .filter(row -> row.g(S.reduction).eq(C.bookingsPerTour - C.approvedBookingsPerTour))
                 .count()
-                .run(db.c, OptArgs.of(S.array_limit, C.bookingTourCount));
+                .run(db.c, OptArgs.of(S.array_limit, C.bookingCount));
         exceptedCount = C.bookingTourCount - (C.bookingCount % C.bookingsPerTour == 0 ? 0 : 1);
         assertEquals("should almost every tour have some non-approved applicants",
                 exceptedCount, count);
@@ -103,9 +106,9 @@ public class CheckData extends Base {
                 .ungroup()
                 .filter(row -> row.g(S.reduction).eq(C.bookingsPerTour))
                 .count()
-                .run(db.c, OptArgs.of(S.array_limit, C.bookingTourCount));
+                .run(db.c, OptArgs.of(S.array_limit, C.bookingCount));
         exceptedCount = C.bookingTourCount - (C.bookingCount % C.bookingsPerTour == 0 ? 0 : 1);
-        assertEquals("should almost every tour have some unique applicants",
+        assertEquals("should almost every tour have " + C.bookingsPerTour + " unique applicants",
                 exceptedCount, count);
 
         //////////////////////////////////////////////////////////////////////
@@ -125,22 +128,21 @@ public class CheckData extends Base {
 
     @Test
     public void check_reviews() {
-        long count, exceptedCount;
 
-        String minReviewId = String.format(Format.reviewId, 1);
-        String maxReviewId = String.format(Format.reviewId, C.reviewCount);
+        String minReviewId = Format.reviewId(0);
+        String maxReviewId = Format.reviewId(C.reviewCount - 1);
         logger.info("except review count: {}, min: {}, max: {}", C.reviewCount, minReviewId, maxReviewId);
 
         assertEquals(C.reviewCount, db.getTableRowCount(S.reviews));
         assertEquals(minReviewId, r.table(S.reviews).min().optArg(S.index, S.reviewId).g(S.reviewId).run(db.c));
         assertEquals(maxReviewId, r.table(S.reviews).max().optArg(S.index, S.reviewId).g(S.reviewId).run(db.c));
 
-        long reviewTourCount = C.approvedBookingTourCount;
+        long reviewTourCount = C.bookingTourCount;
         assertEquals(reviewTourCount,
                 (long) r.table(S.reviews).distinct().optArg(S.index, S.tourId).count().run(db.c));
-        assertEquals(String.format(Format.tourId, 1),
+        assertEquals(Format.tourId(0),
                 r.table(S.reviews).min().optArg(S.index, S.tourId).g(S.tourId).run(db.c));
-        assertEquals(String.format(Format.tourId, reviewTourCount),
+        assertEquals(Format.tourId(reviewTourCount - 1),
                 r.table(S.reviews).max().optArg(S.index, S.tourId).g(S.tourId).run(db.c));
 
         //////////////////////////////////////////////////////////////////////
@@ -219,11 +221,11 @@ public class CheckData extends Base {
         HashMap<String, Object> map;
         long count;
 
-        String reviewId = String.format(Format.tourId, C.tourCount / 2 + 1);
+        String reviewId = Format.tourId(C.tourCount / 2);
         OffsetDateTime dt = OffsetDateTime.of(1900, 12, 31, 23, 58, 59, 123, ZoneOffset.UTC);
 
         map = r.table(S.tours).get(reviewId).update(r.hashMap(S.createdAt, dt)).run(db.c);
-        assertEquals(Long.valueOf(1), map.get(S.replaced));
+        assertEquals(1L, ((Long) map.get(S.replaced)).longValue());
 
         count = r.table(S.tours).getAll(dt).optArg(S.index, S.createdAt).count().run(db.c);
         assertEquals(1, count);
