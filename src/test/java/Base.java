@@ -15,7 +15,7 @@ public class Base {
 
     static class C {
         static final int K = 1000;
-        static final int M = 100000;
+        static final int M = 10000;
 
         static final long userCount = Long.valueOf(System.getProperty("userCount",
                 String.valueOf(100 * M)));
